@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Management System</title>
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts (Sarabun for Thai) -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        /* Custom Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // ==========================================
+        // 1. โครงสร้างฐานข้อมูล (Mock Database)
+        // ==========================================
+
+        const initialDepartments = [
+            { id: 'D01', name: 'IT', managerId: 'E001' },
+            { id: 'D02', name: 'HR', managerId: 'E003' },
+            { id: 'D03', name: 'Marketing', managerId: 'E004' }
+        ];
+
+        const initialEmployees = [
+            { id: 'E001', firstName: 'สมชาย', lastName: 'ใจดี', email: 'somchai@company.com', phone: '081-111-1111', departmentId: 'D01', position: 'Senior Developer', hireDate: '2020-01-15', status: 'ทำงานอยู่' },
+            { id: 'E002', firstName: 'สมหญิง', lastName: 'รักงาน', email: 'somying@company.com', phone: '082-222-2222', departmentId: 'D01', position: 'UX/UI Designer', hireDate: '2021-03-01', status: 'ทำงานอยู่' },
+            { id: 'E003', firstName: 'มานะ', lastName: 'อดทน', email: 'mana@company.com', phone: '083-333-3333', departmentId: 'D02', position: 'HR Manager', hireDate: '2019-06-10', status: 'ทำงานอยู่' },
+            { id: 'E004', firstName: 'ปิติ', lastName: 'ยินดี', email: 'piti@company.com', phone: '084-444-4444', departmentId: 'D03', position: 'Marketing Lead', hireDate: '2022-09-01', status: 'ทำงานอยู่' },
+            { id: 'E005', firstName: 'ชูใจ', lastName: 'ใฝ่รู้', email: 'choojai@company.com', phone: '085-555-5555', departmentId: 'D03', position: 'Content Creator', hireDate: '2023-11-15', status: 'ทำงานอยู่' },
+        ];
+
+        const initialAttendance = [
+            { id: 'A001', employeeId: 'E001', date: '2026-03-16', timeIn: '08:50', timeOut: '18:00', status: 'มาปกติ' },
+            { id: 'A002', employeeId: 'E002', date: '2026-03-16', timeIn: '09:15', timeOut: '18:30', status: 'มาสาย' },
+            { id: 'A003', employeeId: 'E003', date: '2026-03-16', timeIn: '08:45', timeOut: '17:45', status: 'มาปกติ' },
+            { id: 'A004', employeeId: 'E004', date: '2026-03-16', timeIn: '-', timeOut: '-', status: 'ขาดงาน' },
+        ];
+
+        const initialLeaves = [
+            { id: 'L001', employeeId: 'E002', leaveType: 'ลาป่วย', startDate: '2026-03-17', endDate: '2026-03-17', reason: 'เป็นไข้หวัด', status: 'รออนุมัติ' },
+            { id: 'L002', employeeId: 'E004', leaveType: 'ลาพักร้อน', startDate: '2026-03-20', endDate: '2026-03-24', reason: 'พักผ่อนประจำปี', status: 'อนุมัติแล้ว' },
+            { id: 'L003', employeeId: 'E005', leaveType: 'ลากิจ', startDate: '2026-03-18', endDate: '2026-03-18', reason: 'ติดต่อราชการ', status: 'รออนุมัติ' },
+        ];
+
+        const initialPayroll = [
+            { id: 'P001', employeeId: 'E001', monthYear: '02/2026', baseSalary: 60000, deductions: 1500, netSalary: 58500 },
+            { id: 'P002', employeeId: 'E002', monthYear: '02/2026', baseSalary: 45000, deductions: 750, netSalary: 44250 },
+            { id: 'P003', employeeId: 'E003', monthYear: '02/2026', baseSalary: 55000, deductions: 750, netSalary: 54250 },
+        ];
+
+        // ==========================================
+        // Main Application Component
+        // ==========================================
+        function App() {
+            const [activeMenu, setActiveMenu] = useState('dashboard');
+            
+            const [employees, setEmployees] = useState(initialEmployees);
+            const [leaves, setLeaves] = useState(initialLeaves);
+            const [attendance, setAttendance] = useState(initialAttendance);
+            const [payroll, setPayroll] = useState(initialPayroll);
+
+            const getEmployeeName = (id) => {
+                const emp = employees.find(e => e.id === id);
+                return emp ? `${emp.firstName} ${emp.lastName}` : 'ไม่ทราบชื่อ';
+            };
+            const getDeptName = (id) => {
+                const dept = initialDepartments.find(d => d.id === id);
+                return dept ? dept.name : '-';
+            };
+
+            // UI Components
+            const DashboardScreen = () => (
+                <div className="space-y-6 animate-fade-in">
+                    <h2 className="text-2xl font-bold text-gray-800">ภาพรวมระบบ (Dashboard)</h2>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4 border-l-4 border-blue-500">
+                            <div className="p-4 bg-blue-50 text-blue-600 rounded-lg"><i className="fas fa-users text-xl"></i></div>
+                            <div><p className="text-sm text-gray-500">พนักงานทั้งหมด</p><h3 className="text-2xl font-bold">{employees.length}</h3></div>
+                        </div>
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4 border-l-4 border-green-500">
+                            <div className="p-4 bg-green-50 text-green-600 rounded-lg"><i className="fas fa-user-check text-xl"></i></div>
+                            <div><p className="text-sm text-gray-500">มาทำงานวันนี้</p><h3 className="text-2xl font-bold">3</h3></div>
+                        </div>
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4 border-l-4 border-purple-500">
+                            <div className="p-4 bg-purple-50 text-purple-600 rounded-lg"><i className="fas fa-calendar-alt text-xl"></i></div>
+                            <div><p className="text-sm text-gray-500">ลาวันนี้</p><h3 className="text-2xl font-bold">1</h3></div>
+                        </div>
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4 border-l-4 border-yellow-500">
+                            <div className="p-4 bg-yellow-50 text-yellow-600 rounded-lg"><i className="fas fa-clock text-xl"></i></div>
+                            <div><p className="text-sm text-gray-500">มาสาย</p><h3 className="text-2xl font-bold">1</h3></div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h3 className="text-lg font-semibold mb-4 text-gray-700">สัดส่วนพนักงานตามแผนก</h3>
+                            <div className="flex items-center justify-center h-48 space-x-6">
+                                <div className="flex flex-col items-center justify-end h-full">
+                                    <div className="w-16 bg-blue-400 rounded-t-md transition-all duration-1000" style={{ height: '40%' }}></div>
+                                    <span className="text-xs mt-2 font-medium">IT (40%)</span>
+                                </div>
+                                <div className="flex flex-col items-center justify-end h-full">
+                                    <div className="w-16 bg-purple-400 rounded-t-md transition-all duration-1000" style={{ height: '20%' }}></div>
+                                    <span className="text-xs mt-2 font-medium">HR (20%)</span>
+                                </div>
+                                <div className="flex flex-col items-center justify-end h-full">
+                                    <div className="w-16 bg-green-400 rounded-t-md transition-all duration-1000" style={{ height: '40%' }}></div>
+                                    <span className="text-xs mt-2 font-medium">MKT (40%)</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h3 className="text-lg font-semibold mb-4 text-gray-700">สถิติการมาทำงาน (สัปดาห์นี้)</h3>
+                            <div className="flex items-end justify-between h-48 pt-4">
+                                {['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.'].map((day, i) => (
+                                    <div key={day} className="flex flex-col items-center w-full px-1">
+                                        <div className="w-full flex justify-center space-x-1 items-end h-32">
+                                            <div className="w-4 bg-green-500 rounded-t-sm" style={{height: `${Math.random() * 40 + 60}%`}}></div>
+                                            <div className="w-4 bg-yellow-400 rounded-t-sm" style={{height: `${Math.random() * 20}%`}}></div>
+                                        </div>
+                                        <span className="text-xs mt-2 text-gray-500">{day}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="p-4 border-b border-gray-100 bg-gray-50">
+                            <h3 className="text-lg font-semibold text-gray-700">อัปเดตล่าสุด (Recent Activities)</h3>
+                        </div>
+                        <div className="p-4 space-y-4">
+                            <div className="flex items-center space-x-3 text-sm">
+                                <span className="w-2 h-2 rounded-full bg-yellow-400"></span>
+                                <span className="font-medium text-gray-800">คำขอลาใหม่:</span>
+                                <span className="text-gray-600">คุณสมหญิง รักงาน ยื่นขอลาป่วย (รออนุมัติ)</span>
+                                <span className="text-gray-400 text-xs ml-auto">10 นาทีที่แล้ว</span>
+                            </div>
+                            <div className="flex items-center space-x-3 text-sm">
+                                <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                <span className="font-medium text-gray-800">เข้างาน:</span>
+                                <span className="text-gray-600">คุณสมชาย ใจดี ลงชื่อเข้างานเวลา 08:50</span>
+                                <span className="text-gray-400 text-xs ml-auto">2 ชั่วโมงที่แล้ว</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const EmployeeScreen = () => (
+                <div className="space-y-6 animate-fade-in">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <h2 className="text-2xl font-bold text-gray-800">จัดการข้อมูลพนักงาน</h2>
+                        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition shadow-sm">
+                            <i className="fas fa-plus"></i> <span>เพิ่มพนักงานใหม่</span>
+                        </button>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                        <div className="flex-1 relative">
+                            <i className="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                            <input type="text" placeholder="ค้นหาชื่อ หรือ รหัสพนักงาน..." className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                        </div>
+                        <div className="relative">
+                            <select className="pl-10 pr-8 py-2 border rounded-lg appearance-none bg-white text-gray-700 outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto">
+                                <option>ทุกแผนก</option>
+                                <option>IT</option>
+                                <option>HR</option>
+                                <option>Marketing</option>
+                            </select>
+                            <i className="fas fa-filter absolute left-3 top-3 text-gray-400"></i>
+                            <i className="fas fa-chevron-down absolute right-3 top-3 text-gray-400 text-sm pointer-events-none"></i>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+                        <table className="w-full text-left border-collapse min-w-[800px]">
+                            <thead>
+                                <tr className="bg-gray-50 text-gray-600 text-sm border-b">
+                                    <th className="p-4 font-semibold">รหัส</th>
+                                    <th className="p-4 font-semibold">ชื่อ-สกุล</th>
+                                    <th className="p-4 font-semibold">แผนก</th>
+                                    <th className="p-4 font-semibold">ตำแหน่ง</th>
+                                    <th className="p-4 font-semibold">สถานะ</th>
+                                    <th className="p-4 font-semibold text-center">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {employees.map((emp) => (
+                                    <tr key={emp.id} className="border-b hover:bg-gray-50 transition">
+                                        <td className="p-4 text-sm font-medium text-gray-900">{emp.id}</td>
+                                        <td className="p-4 text-sm text-gray-700">
+                                            <div className="font-medium">{emp.firstName} {emp.lastName}</div>
+                                            <div className="text-xs text-gray-400 mt-1"><i className="fas fa-envelope mr-1"></i>{emp.email}</div>
+                                        </td>
+                                        <td className="p-4 text-sm text-gray-700">{getDeptName(emp.departmentId)}</td>
+                                        <td className="p-4 text-sm text-gray-700">{emp.position}</td>
+                                        <td className="p-4 text-sm">
+                                            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                                                {emp.status}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 flex justify-center space-x-4 text-gray-400">
+                                            <button className="hover:text-blue-500 transition"><i className="fas fa-eye"></i></button>
+                                            <button className="hover:text-yellow-500 transition"><i className="fas fa-edit"></i></button>
+                                            <button className="hover:text-red-500 transition"><i className="fas fa-trash-alt"></i></button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+
+            const AttendanceScreen = () => (
+                <div className="space-y-6 animate-fade-in">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <h2 className="text-2xl font-bold text-gray-800">บันทึกและตรวจสอบเวลา</h2>
+                        <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition shadow-sm">
+                            <i className="fas fa-file-excel"></i> <span>Export to Excel</span>
+                        </button>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                        <input type="date" defaultValue="2026-03-16" className="border px-4 py-2 rounded-lg text-gray-700 outline-none focus:ring-2 focus:ring-blue-500" />
+                        <div className="flex-1 relative">
+                            <i className="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                            <input type="text" placeholder="ค้นหาชื่อพนักงาน..." className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+                        <table className="w-full text-left border-collapse min-w-[600px]">
+                            <thead>
+                                <tr className="bg-gray-50 text-gray-600 text-sm border-b">
+                                    <th className="p-4 font-semibold">ชื่อพนักงาน</th>
+                                    <th className="p-4 font-semibold">วันที่</th>
+                                    <th className="p-4 font-semibold text-center">เวลาเข้า</th>
+                                    <th className="p-4 font-semibold text-center">เวลาออก</th>
+                                    <th className="p-4 font-semibold text-center">สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {attendance.map((record) => {
+                                    let statusColor = 'bg-gray-100 text-gray-700';
+                                    if (record.status === 'มาปกติ') statusColor = 'bg-green-100 text-green-700';
+                                    if (record.status === 'มาสาย') statusColor = 'bg-yellow-100 text-yellow-700';
+                                    if (record.status === 'ขาดงาน') statusColor = 'bg-red-100 text-red-700';
+
+                                    return (
+                                        <tr key={record.id} className="border-b hover:bg-gray-50 transition">
+                                            <td className="p-4 text-sm font-medium text-gray-800">{getEmployeeName(record.employeeId)}</td>
+                                            <td className="p-4 text-sm text-gray-600"><i className="far fa-calendar-alt mr-2 text-gray-400"></i>{record.date}</td>
+                                            <td className="p-4 text-sm text-gray-600 font-mono text-center">{record.timeIn}</td>
+                                            <td className="p-4 text-sm text-gray-600 font-mono text-center">{record.timeOut}</td>
+                                            <td className="p-4 text-sm text-center">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColor}`}>
+                                                    {record.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+
+            const LeaveScreen = () => {
+                const handleAction = (id, newStatus) => {
+                    setLeaves(leaves.map(l => l.id === id ? { ...l, status: newStatus } : l));
+                };
+
+                const pendingCount = leaves.filter(l => l.status === 'รออนุมัติ').length;
+
+                return (
+                    <div className="space-y-6 animate-fade-in">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-800">จัดการการลา</h2>
+                                <p className="text-sm text-gray-500 mt-1">มีคำขอลาที่รออนุมัติ <span className="text-blue-600 font-bold">{pendingCount}</span> รายการ</p>
+                            </div>
+                            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition shadow-sm">
+                                <i className="fas fa-paper-plane"></i> <span>ยื่นเรื่องขอลา (โหมดพนักงาน)</span>
+                            </button>
+                        </div>
+
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+                            <table className="w-full text-left border-collapse min-w-[800px]">
+                                <thead>
+                                    <tr className="bg-gray-50 text-gray-600 text-sm border-b">
+                                        <th className="p-4 font-semibold">ผู้ขอลา</th>
+                                        <th className="p-4 font-semibold">ประเภท</th>
+                                        <th className="p-4 font-semibold">วันที่ลา</th>
+                                        <th className="p-4 font-semibold">เหตุผล</th>
+                                        <th className="p-4 font-semibold text-center">สถานะ</th>
+                                        <th className="p-4 font-semibold text-center">การจัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {leaves.map((leave) => {
+                                        let badgeColor = 'bg-yellow-100 text-yellow-700';
+                                        if (leave.status === 'อนุมัติแล้ว') badgeColor = 'bg-green-100 text-green-700';
+                                        if (leave.status === 'ปฏิเสธ') badgeColor = 'bg-red-100 text-red-700';
+
+                                        return (
+                                            <tr key={leave.id} className="border-b hover:bg-gray-50 transition">
+                                                <td className="p-4 text-sm font-medium text-gray-800">{getEmployeeName(leave.employeeId)}</td>
+                                                <td className="p-4 text-sm text-gray-600">{leave.leaveType}</td>
+                                                <td className="p-4 text-sm text-gray-600">{leave.startDate} ถึง {leave.endDate}</td>
+                                                <td className="p-4 text-sm text-gray-600">{leave.reason}</td>
+                                                <td className="p-4 text-sm text-center">
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badgeColor}`}>
+                                                        {leave.status}
+                                                    </span>
+                                                </td>
+                                                <td className="p-4 flex justify-center space-x-2">
+                                                    {leave.status === 'รออนุมัติ' ? (
+                                                        <>
+                                                            <button onClick={() => handleAction(leave.id, 'อนุมัติแล้ว')} className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded shadow-sm text-xs transition flex items-center space-x-1">
+                                                                <i className="fas fa-check"></i> <span>อนุมัติ</span>
+                                                            </button>
+                                                            <button onClick={() => handleAction(leave.id, 'ปฏิเสธ')} className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded shadow-sm text-xs transition flex items-center space-x-1">
+                                                                <i className="fas fa-times"></i> <span>ปฏิเสธ</span>
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <span className="text-xs text-gray-400 italic px-2 py-1.5 bg-gray-50 rounded border border-gray-100"><i className="fas fa-lock mr-1"></i> จัดการแล้ว</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                );
+            };
+
+            const PayrollScreen = () => (
+                <div className="space-y-6 animate-fade-in">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <h2 className="text-2xl font-bold text-gray-800">จัดการเงินเดือน (Payroll)</h2>
+                        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition shadow-sm">
+                            <i className="fas fa-calculator"></i> <span>คำนวณเงินเดือนอัตโนมัติ</span>
+                        </button>
+                    </div>
+
+                    <div className="flex space-x-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100 inline-block">
+                        <div className="flex items-center space-x-3">
+                            <label className="text-sm font-semibold text-gray-700"><i className="far fa-calendar-alt mr-2 text-blue-500"></i>รอบเดือน/ปี:</label>
+                            <div className="relative">
+                                <select className="border px-4 py-2 pr-8 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white appearance-none">
+                                    <option>03/2026</option>
+                                    <option selected>02/2026</option>
+                                    <option>01/2026</option>
+                                </select>
+                                <i className="fas fa-chevron-down absolute right-3 top-3 text-gray-400 text-sm pointer-events-none"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+                        <table className="w-full text-left border-collapse min-w-[700px]">
+                            <thead>
+                                <tr className="bg-gray-50 text-gray-600 text-sm border-b">
+                                    <th className="p-4 font-semibold">ชื่อพนักงาน</th>
+                                    <th className="p-4 font-semibold text-right">เงินเดือนพื้นฐาน (฿)</th>
+                                    <th className="p-4 font-semibold text-right text-red-500">รายการหัก (฿)</th>
+                                    <th className="p-4 font-semibold text-right text-green-600">สุทธิที่ได้รับ (฿)</th>
+                                    <th className="p-4 font-semibold text-center">สลิปเงินเดือน</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {payroll.map((pay) => (
+                                    <tr key={pay.id} className="border-b hover:bg-gray-50 transition">
+                                        <td className="p-4 text-sm font-medium text-gray-800">{getEmployeeName(pay.employeeId)}</td>
+                                        <td className="p-4 text-sm text-gray-600 text-right">{pay.baseSalary.toLocaleString()}</td>
+                                        <td className="p-4 text-sm text-red-500 text-right">-{pay.deductions.toLocaleString()}</td>
+                                        <td className="p-4 text-lg font-bold text-green-600 text-right">{pay.netSalary.toLocaleString()}</td>
+                                        <td className="p-4 flex justify-center space-x-3 text-gray-500">
+                                            <button title="ดูสลิปเงินเดือน" className="hover:text-blue-600 hover:bg-blue-100 transition p-2 bg-blue-50 rounded-lg"><i className="fas fa-file-invoice-dollar text-blue-600"></i></button>
+                                            <button title="ส่ง Email" className="hover:text-gray-800 hover:bg-gray-200 transition p-2 bg-gray-100 rounded-lg"><i className="fas fa-envelope"></i></button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+
+            const menuItems = [
+                { id: 'dashboard', icon: 'fas fa-chart-pie', label: 'ภาพรวม (Dashboard)' },
+                { id: 'employees', icon: 'fas fa-users', label: 'พนักงาน (Employees)' },
+                { id: 'attendance', icon: 'fas fa-clock', label: 'เวลาทำงาน (Attendance)' },
+                { id: 'leaves', icon: 'fas fa-calendar-alt', label: 'การลา (Leave Requests)' },
+                { id: 'payroll', icon: 'fas fa-money-check-alt', label: 'เงินเดือน (Payroll)' },
+            ];
+
+            // Mobile menu state
+            const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+            return (
+                <div className="flex h-screen bg-slate-50 font-sans text-gray-900 overflow-hidden">
+                    {/* Mobile Overlay */}
+                    {mobileMenuOpen && (
+                        <div 
+                            className="fixed inset-0 bg-black/50 z-20 md:hidden"
+                            onClick={() => setMobileMenuOpen(false)}
+                        ></div>
+                    )}
+
+                    {/* Sidebar */}
+                    <aside className={`
+                        fixed md:static inset-y-0 left-0 z-30
+                        w-64 bg-slate-900 text-white flex flex-col shadow-2xl md:shadow-xl
+                        transform transition-transform duration-300 ease-in-out
+                        ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                    `}>
+                        <div className="p-6 flex items-center justify-between border-b border-slate-800">
+                            <div className="flex items-center space-x-3">
+                                <div className="bg-blue-500 p-2.5 rounded-lg shadow-lg">
+                                    <i className="fas fa-layer-group text-white text-lg"></i>
+                                </div>
+                                <span className="text-xl font-bold tracking-wide">HR System</span>
+                            </div>
+                            <button className="md:hidden text-slate-400 hover:text-white" onClick={() => setMobileMenuOpen(false)}>
+                                <i className="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        
+                        <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto">
+                            {menuItems.map((item) => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => {
+                                        setActiveMenu(item.id);
+                                        setMobileMenuOpen(false);
+                                    }}
+                                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                                        activeMenu === item.id 
+                                            ? 'bg-blue-600 text-white shadow-md transform scale-[1.02]' 
+                                            : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                    }`}
+                                >
+                                    <i className={`${item.icon} w-5 text-center`}></i>
+                                    <span className="font-medium">{item.label}</span>
+                                </button>
+                            ))}
+                        </nav>
+                        
+                        <div className="p-4 m-4 bg-slate-800 rounded-xl border border-slate-700">
+                            <div className="flex items-center space-x-3">
+                                <div className="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center font-bold text-blue-300 border-2 border-blue-500">
+                                    A
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-white">Admin HR</p>
+                                    <p className="text-xs text-slate-400">ผู้ดูแลระบบ</p>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Main Content Area */}
+                    <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
+                        {/* Mobile Header */}
+                        <header className="md:hidden bg-white shadow-sm border-b border-gray-200 p-4 flex items-center justify-between z-10">
+                            <div className="flex items-center space-x-3">
+                                <div className="bg-blue-500 p-1.5 rounded-md">
+                                    <i className="fas fa-layer-group text-white text-sm"></i>
+                                </div>
+                                <span className="text-lg font-bold text-slate-800">HR System</span>
+                            </div>
+                            <button 
+                                className="text-slate-600 hover:text-blue-600 p-2"
+                                onClick={() => setMobileMenuOpen(true)}
+                            >
+                                <i className="fas fa-bars text-xl"></i>
+                            </button>
+                        </header>
+
+                        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+                            <div className="max-w-6xl mx-auto pb-10">
+                                {activeMenu === 'dashboard' && <DashboardScreen />}
+                                {activeMenu === 'employees' && <EmployeeScreen />}
+                                {activeMenu === 'attendance' && <AttendanceScreen />}
+                                {activeMenu === 'leaves' && <LeaveScreen />}
+                                {activeMenu === 'payroll' && <PayrollScreen />}
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
